@@ -25,9 +25,19 @@ class _ExpensesState extends State<Expenses> {
         date: DateTime.now(),
         category: Category.food)
   ];
+  void _addExpense(Expense expense) {
+    setState(() {
+      _registedExpenses.add(expense);
+    });
+  }
 
   void _openAddExpenseModal() {
-    showModalBottomSheet(context: context, builder: (context) => NewExpense());
+    showModalBottomSheet(
+        isScrollControlled: true,
+        context: context,
+        builder: (context) => NewExpense(
+              onAddExpense: _addExpense,
+            ));
   }
 
   @override

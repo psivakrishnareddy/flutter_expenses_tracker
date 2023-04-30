@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_expense_tracker/models/expense.dart';
+import 'package:intl/intl.dart';
+
+final formatter = DateFormat.yMd();
 
 class NewExpense extends StatefulWidget {
-  const NewExpense({super.key});
+  const NewExpense({super.key, required this.onAddExpense});
+
+  final void Function(Expense expense) onAddExpense;
 
   @override
   State<StatefulWidget> createState() {
@@ -10,30 +16,145 @@ class NewExpense extends StatefulWidget {
 }
 
 class _NewExpense extends State<NewExpense> {
-  var _enteredValue = '';
+  // var _enteredValue = '';
 
-  void _saveTitleInput(String inputValue) {
-    _enteredValue = inputValue;
+  // void _saveTitleInput(String inputValue) {
+  //   _enteredValue = inputValue;
+  // }
+
+  final _titleController = TextEditingController();
+  final _amountController = TextEditingController();
+  DateTime? _selectedDate;
+  Category _selectedCategory = Category.leisure;
+
+  void _showDatePicker() async {
+    final now = DateTime.now();
+    final firstDate = DateTime(now.year - 1, now.month, now.day);
+
+    // showDatePicker(
+    //     context: context,
+    //     initialDate: now,
+    //     firstDate: firstDate,
+    //     lastDate: now
+    //     ).then((value) => //getthe date value); //once a date is picked in future
+    final pickedDate = await showDatePicker(
+        context: context,
+        initialDate: now,
+        firstDate: firstDate,
+        lastDate: now);
+
+    setState(() {
+      _selectedDate = pickedDate;
+    });
+  }
+
+  void _submitExpense() {
+    final enteredAmount = double.tryParse(_amountController.text);
+    final amountIsInvalid = enteredAmount == null || enteredAmount <= 0;
+    if (_titleController.text.trim().isEmpty ||
+        amountIsInvalid ||
+        _selectedDate == null) {
+      //show error message
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text("Invalid input"),
+          content: const Text(
+              "Please make sure a valid title, amount, date and category was enterd"),
+          actions: [
+            TextButton(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                },
+                child: const Text("Okay"))
+          ],
+        ),
+      );
+      return;
+    }
+    widget.onAddExpense(Expense(
+        title: _titleController.text,
+        amount: enteredAmount,
+        date: _selectedDate!,
+        category: _selectedCategory));
+
+    Navigator.pop(context);
+  }
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _amountController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 48, 16, 16),
       child: Column(
         children: [
           TextField(
-            onChanged: _saveTitleInput,
+            controller: _titleController,
             maxLength: 50,
             decoration: const InputDecoration(label: Text("Title")),
           ),
           Row(
             children: [
-              ElevatedButton(
+              Expanded(
+                child: TextField(
+                  controller: _amountController,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    prefixText: '\$',
+                    label: Text("Amount"),
+                  ),
+                ),
+              ),
+              const SizedBox(
+                width: 16,
+              ),
+              Expanded(
+                  child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text(_selectedDate == null
+                      ? 'no Date Selected'
+                      : formatter.format(_selectedDate!)),
+                  IconButton(
+                      onPressed: _showDatePicker,
+                      icon: const Icon(Icons.calendar_month))
+                ],
+              ))
+            ],
+          ),
+          const SizedBox(),
+          Row(
+            children: [
+              DropdownButton(
+                  value: _selectedCategory,
+                  items: Category.values
+                      .map((category) => DropdownMenuItem(
+                          value: category,
+                          child: Text(category.name.toUpperCase())))
+                      .toList(),
+                  onChanged: (ValueKey) {
+                    if (ValueKey == null) {
+                      return;
+                    }
+                    setState(() {
+                      _selectedCategory = ValueKey;
+                    });
+                  }),
+              const Spacer(),
+              TextButton(
                   onPressed: () {
-                    print(_enteredValue);
+                    Navigator.pop(context);
                   },
-                  child: const Text("Save Expense"))
+                  child: const Text("cancel!")),
+              ElevatedButton(
+                  onPressed: _submitExpense, child: const Text("Save Expense"))
             ],
           )
         ],
