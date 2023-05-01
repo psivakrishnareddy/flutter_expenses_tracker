@@ -139,12 +139,12 @@ class _NewExpense extends State<NewExpense> {
                           value: category,
                           child: Text(category.name.toUpperCase())))
                       .toList(),
-                  onChanged: (ValueKey) {
-                    if (ValueKey == null) {
+                  onChanged: (value) {
+                    if (value == null) {
                       return;
                     }
                     setState(() {
-                      _selectedCategory = ValueKey;
+                      _selectedCategory = value;
                     });
                   }),
               const Spacer(),
